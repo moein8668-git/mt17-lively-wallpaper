@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Reactive Wallpaper</title>
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+  <div id="background-stack">
+    <div id="bg-layer-a" class="bg-layer is-visible">
+      <img id="background" class="bg-image" src="images/background.jpg" alt="Static Background" draggable="false">
+      <video
+        class="bg-video object-cover w-screen h-screen"
+        id="animated-background"
+        src="media/bmw.webm"
+        autoplay
+        loop
+        muted
+      ></video>
+    </div>
+    <div id="bg-layer-b" class="bg-layer">
+      <img class="bg-image" src="images/background.jpg" alt="" draggable="false">
+      <video class="bg-video object-cover w-screen h-screen" src="media/bmw.webm" autoplay loop muted></video>
+    </div>
+  </div>
+
+  <div id="ui-layer">
+  <div id="content">
+    <div id="metadata">
+      <img id="albumart" src="res/da.png" alt="Album Art" draggable="false">
+      <h1 id="title"></h1>
+      <h2 id="artist"></h2>
+    </div>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div id="systemUsage">
+    <div id="cpuUsage">CPU: 0%</div>
+    <div id="ramUsage">RAM: 0%</div>
+    <div id="gpuUsage">GPU: 0%</div>
+  </div>
+
+  <div id="networkStats">
+    <div id="netDown">↓ 0.00 Mb/s</div>
+    <div id="netUp">↑ 0.00 Mb/s</div>
+  </div>
+  <div id="clocknum1">
+    <!-- Clock section -->
+    <div id="clock1">
+      <span id="time">00:00:00</span>
+      <span id="ampm">AM</span> <!-- AM/PM text -->
+
+
+    </div>
+
+    <div id="days">
+      <span class="day">monday</span>
+      <span class="day">tuesday</span>
+      <span class="day">wednesday</span>
+      <span class="day">thursday</span>
+      <span class="day">friday</span>
+      <span class="day">saturday</span>
+      <span class="day">sunday</span>
+    </div>
+
+    <div id="full-date">
+      <span id="day-name"></span>
+      <span id="month-date"></span>
+      <span id="year"></span>
+    </div>
+  </div>
+
+
+  <div id="weather">
+    <div class="weather-row">
+      <div id="weatherIcon"></div>
+      <div id="weatherTemp"></div>
+      <div id="weatherDescription"></div>
+    </div>
+    <div id="weatherExtra"></div>
+  </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>

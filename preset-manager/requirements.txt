@@ -1,0 +1,4 @@
+# Optional web UI (auto-used when installed):
+# pip install flask
+
+# Desktop UI uses Python stdlib only (tkinter).

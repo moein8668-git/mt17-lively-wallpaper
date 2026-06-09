@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Preset Manager runtime (created on save / apply)
+preset-manager/config.json
+presets/_command.json
+presets/*.preset.json
+
+# Local reference / dev (not part of shipped wallpaper)
+lively-core-separation/

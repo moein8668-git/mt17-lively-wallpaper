@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mt17 Preset Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div class="hero-text">
+        <h1>mt17 Preset Manager</h1>
+        <p class="subtitle">Tune in Lively, then save or apply presets here.</p>
+      </div>
+      <div class="hero-thumb">
+        <img id="wallpaperThumb" alt="Wallpaper thumbnail" hidden>
+        <div id="wallpaperThumbFallback" class="thumb-fallback">mt17</div>
+      </div>
+      <button type="button" class="ghost settings-top" id="settingsBtn">Settings</button>
+    </header>
+
+    <div id="status" class="status ok">Ready</div>
+
+    <section class="panel">
+      <label for="presetList">Your presets</label>
+      <select id="presetList" size="10"></select>
+    </section>
+
+    <section class="panel">
+      <label for="presetName">Preset name</label>
+      <input id="presetName" type="text" placeholder="My preset">
+      <p class="hint">Edit the name here, then click Rename to save it.</p>
+    </section>
+
+    <section class="panel">
+      <label for="monitorSelect">Lively monitor (saved settings)</label>
+      <select id="monitorSelect"></select>
+      <p id="wallpaperPathInfo" class="hint"></p>
+    </section>
+
+    <div class="row">
+      <button type="button" class="primary" id="applyBtn">Apply to wallpaper</button>
+      <button type="button" class="primary" id="saveBtn">Save current look</button>
+    </div>
+
+    <div class="row four">
+      <button type="button" id="viewBtn">View settings</button>
+      <button type="button" id="renameBtn">Rename</button>
+      <button type="button" id="deleteBtn">Delete</button>
+      <button type="button" id="duplicateBtn">Duplicate</button>
+    </div>
+
+    <section class="panel preset-io">
+      <h2>Preset file</h2>
+      <div class="row">
+        <a class="button link" id="downloadPreset" href="#">Download preset JSON</a>
+        <label class="button file-label">
+          Upload preset JSON
+          <input id="uploadPresetFile" type="file" accept=".json,application/json" hidden>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel slideshow-panel">
+      <h2>Slideshow</h2>
+      <p class="hint">Rotate presets on a timer. Visual only — does not change Lively SaveData each slide.</p>
+      <label class="checkbox-row">
+        <input id="slideshowEnabled" type="checkbox">
+        Enable preset slideshow
+      </label>
+      <label for="slideshowInterval">Interval (minutes)</label>
+      <input id="slideshowInterval" type="number" min="0.5" max="1440" step="0.5" value="5">
+      <label for="slideshowCrossfade">Cross-fade (seconds, 0 = instant)</label>
+      <input id="slideshowCrossfade" type="number" min="0" max="10" step="0.1" value="1.2">
+      <label for="slideshowOrder">Order</label>
+      <select id="slideshowOrder">
+        <option value="sequential">Sequential</option>
+        <option value="random">Random</option>
+        <option value="shuffle">Shuffle (no repeat until all played)</option>
+      </select>
+      <div class="slideshow-playlist-header">
+        <label for="slideshowPlaylist">Playlist</label>
+        <div class="slideshow-playlist-actions">
+          <button type="button" id="slideshowAddBtn" class="ghost small">Add selected preset</button>
+          <button type="button" id="slideshowRemoveBtn" class="ghost small">Remove</button>
+          <button type="button" id="slideshowUpBtn" class="ghost small">Up</button>
+          <button type="button" id="slideshowDownBtn" class="ghost small">Down</button>
+        </div>
+      </div>
+      <select id="slideshowPlaylist" size="6" multiple></select>
+      <p id="slideshowStatus" class="hint">Slideshow is off.</p>
+      <button type="button" class="primary" id="slideshowSaveBtn">Save slideshow</button>
+    </section>
+
+    <section class="panel backup-panel">
+      <h2>Backups</h2>
+      <div class="row">
+        <button type="button" id="backupBtn">Create local backup</button>
+        <a class="button link" id="downloadBackup" href="/api/backup/download">Download backup JSON</a>
+      </div>
+      <div class="upload-row">
+        <input id="uploadFile" type="file" accept=".json,application/json">
+        <button type="button" id="uploadBtn">Upload backup JSON</button>
+      </div>
+      <button type="button" class="ghost" id="restoreBtn">Restore latest local backup</button>
+    </section>
+  </div>
+
+  <dialog id="viewDialog">
+    <div class="dialog-header">
+      <h2 id="viewDialogTitle">Preset settings</h2>
+      <button type="button" class="ghost" id="viewClose">Close</button>
+    </div>
+    <div id="viewDialogBody" class="view-body"></div>
+  </dialog>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" id="settingsForm">
+      <h2>Settings</h2>
+      <p class="hint">Wallpaper and SaveData paths are detected automatically from this project folder.</p>
+      <label>Installed wallpaper</label>
+      <input id="installedWallpaperPath" type="text" readonly>
+      <label>SaveData folder</label>
+      <input id="savedataDir" type="text" readonly>
+      <label for="wallpaperPathOverride">Override wallpaper folder (optional)</label>
+      <input id="wallpaperPathOverride" type="text" placeholder="Leave empty for auto-detect">
+      <div class="dialog-actions">
+        <button type="button" value="cancel" id="settingsCancel">Cancel</button>
+        <button type="submit" value="save" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    window.MT17_CONFIG = {
+      apiPort: {{ api_port }},
+      webPort: {{ web_port }},
+    };
+  </script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

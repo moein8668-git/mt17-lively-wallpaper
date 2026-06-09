@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "enabled": false,
+  "intervalSeconds": 300,
+  "order": "sequential",
+  "playlist": [],
+  "pausedUntilManualResume": false,
+  "crossfadeSeconds": 1.2
+}
