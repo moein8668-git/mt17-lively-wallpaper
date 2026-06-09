@@ -1,0 +1,15 @@
+{
+  "AppVersion": "0.9",
+  "Title": "mt17",
+  "Thumbnail": "thumbnail.jpg",
+  "Preview": null,
+  "Desc": null,
+  "Author": null,
+  "License": null,
+  "Contact": null,
+  "Arguments": "--system-nowplaying --audio --system-information --pause-event true",
+  "Type": 1,
+  "FileName": "index.html",
+  "IsAbsolutePath": false,
+  "IsNeedLicense": false
+}

@@ -1,0 +1,590 @@
+{
+  "fontsSectionLabel": {
+    "type": "label",
+    "value": "Fonts (browse fonts folder)"
+  },
+  "songTitleFont": {
+    "type": "folderDropdown",
+    "value": "mediaFont.otf",
+    "filter": "*.ttf|*.otf|*.woff|*.woff2",
+    "text": "Song title font",
+    "folder": "fonts"
+  },
+  "songArtistFont": {
+    "type": "folderDropdown",
+    "value": "mediaFont.otf",
+    "filter": "*.ttf|*.otf|*.woff|*.woff2",
+    "text": "Artist name font",
+    "folder": "fonts"
+  },
+  "weatherFont": {
+    "type": "folderDropdown",
+    "value": "weatherFont.ttf",
+    "filter": "*.ttf|*.otf|*.woff|*.woff2",
+    "text": "Weather font",
+    "folder": "fonts"
+  },
+  "systemUsageFont": {
+    "type": "folderDropdown",
+    "value": "systemFont.ttf",
+    "filter": "*.ttf|*.otf|*.woff|*.woff2",
+    "text": "System usage font (also network speed)",
+    "folder": "fonts"
+  },
+  "clockFont": {
+    "type": "folderDropdown",
+    "value": "clock1Font.ttf",
+    "filter": "*.ttf|*.otf|*.woff|*.woff2",
+    "text": "Clock font",
+    "folder": "fonts"
+  },
+  "lineColor": {
+    "text": "visualizer Color",
+    "type": "color",
+    "value": "#7B00FF"
+  },
+  "show_visualizer": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_visualizer"
+  },
+  "show_animated_background": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_animated_background"
+  },
+  "animated_background": {
+    "type": "folderDropdown",
+    "value": "bmw.webm",
+    "filter": "*.mp4|*.webm|*.mkv|*.m4v",
+    "text": "animated_background",
+    "folder": "media"
+  },
+  "updateStaticWallpaper": {
+    "type": "folderDropdown",
+    "value": "background.jpg",
+    "filter": "*.jpg|*.png|*.webp|*.jpeg|*.tiff",
+    "text": "static_walpaper",
+    "folder": "images"
+  },
+  "show_cover": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_cover"
+  },
+  "albumArtSize": {
+    "max": 1000,
+    "min": 0,
+    "step": 1,
+    "text": "albumArtSize",
+    "type": "slider",
+    "value": 120
+  },
+  "show_song_name": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_song_name"
+  },
+  "titleFontSize": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "titleFontSize",
+    "type": "slider",
+    "value": 20
+  },
+  "show_singer": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_singer"
+  },
+  "artistFontSize": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "artistFontSize",
+    "type": "slider",
+    "value": 15
+  },
+  "visualizerLeft": {
+    "max": 1000,
+    "min": 0,
+    "step": 1,
+    "text": "visualizer horizontal",
+    "type": "slider",
+    "value": 130
+  },
+  "visualizerTop": {
+    "max": 1000,
+    "min": 0,
+    "step": 1,
+    "text": "visualizer vertical",
+    "type": "slider",
+    "value": 100
+  },
+  "visualizerWidth": {
+    "max": 800,
+    "min": 20,
+    "step": 1,
+    "text": "Visualizer width",
+    "type": "slider",
+    "value": 100
+  },
+  "visualizerHeight": {
+    "max": 400,
+    "min": 10,
+    "step": 1,
+    "text": "Visualizer height",
+    "type": "slider",
+    "value": 30
+  },
+  "visualizerMargin": {
+    "max": 200,
+    "min": 0,
+    "step": 1,
+    "text": "Space between song info and visualizer",
+    "type": "slider",
+    "value": 0
+  },
+  "square": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Square wave (off = smooth)"
+  },
+  "visualizerGlow": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Visualizer glow"
+  },
+  "backgroundColor": {
+    "text": "Visualizer fill color",
+    "type": "color",
+    "value": "#000000"
+  },
+  "contentTop": {
+    "max": 1000,
+    "min": 0,
+    "step": 1,
+    "text": "Media block vertical position",
+    "type": "slider",
+    "value": 20
+  },
+  "contentLeft": {
+    "max": 1000,
+    "min": 0,
+    "step": 1,
+    "text": "Media block horizontal position",
+    "type": "slider",
+    "value": 20
+  },
+  "songNameLimit": {
+    "max": 100,
+    "min": 5,
+    "step": 1,
+    "text": "Song title character limit",
+    "type": "slider",
+    "value": 20
+  },
+  "cpuDecimalnumber": {
+    "max": 5,
+    "min": 0,
+    "step": 1,
+    "text": "cpuDecimalnumber",
+    "type": "slider",
+    "value": 2
+  },
+  "gpuDecimalnumber": {
+    "max": 5,
+    "min": 0,
+    "step": 1,
+    "text": "gpuDecimalnumber",
+    "type": "slider",
+    "value": 2
+  },
+  "memDecimalnumber": {
+    "max": 5,
+    "min": 0,
+    "step": 1,
+    "text": "memDecimalnumber",
+    "type": "slider",
+    "value": 2
+  },
+  "show_weather": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_weather"
+  },
+  "OpenWeather_API": {
+    "type": "textbox",
+    "value": "",
+    "text": "OpenWeather API Key"
+  },
+  "OpenWeather_UseCity": {
+    "type": "checkbox",
+    "value": false,
+    "text": "Use city name (off = use coordinates)"
+  },
+  "OpenWeather_city": {
+    "type": "textbox",
+    "value": "Tehran",
+    "text": "City name"
+  },
+  "OpenWeather_Lat": {
+    "type": "textbox",
+    "value": "30.77",
+    "text": "Latitude"
+  },
+  "OpenWeather_Lon": {
+    "type": "textbox",
+    "value": "40.77",
+    "text": "Longitude"
+  },
+  "OpenWeather_units": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Temperature units",
+    "items": [
+      "Metric (°C)",
+      "Imperial (°F)"
+    ]
+  },
+  "update_interval": {
+    "max": 3600,
+    "min": 60,
+    "step": 1,
+    "text": "Weather refresh interval (seconds)",
+    "type": "slider",
+    "value": 180
+  },
+  "weatherbottom": {
+    "max": 500,
+    "min": 0,
+    "step": 1,
+    "text": "weatherbottom",
+    "type": "slider",
+    "value": 30
+  },
+  "weatherLeft": {
+    "max": 500,
+    "min": 0,
+    "step": 1,
+    "text": "weatherLeft",
+    "type": "slider",
+    "value": 20
+  },
+  "weatherTempColor": {
+    "text": "Weather temperature color",
+    "type": "color",
+    "value": "#ffffff"
+  },
+  "weatherTempFontSize": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "Weather temperature font size",
+    "type": "slider",
+    "value": 18
+  },
+  "weatherDescriptionColor": {
+    "text": "Weather description color",
+    "type": "color",
+    "value": "#cccccc"
+  },
+  "weatherBackground": {
+    "text": "weatherBackground",
+    "type": "color",
+    "value": "#000000"
+  },
+  "weatherIconSize": {
+    "max": 500,
+    "min": 0,
+    "step": 1,
+    "text": "weatherIconSize",
+    "type": "slider",
+    "value": 40
+  },
+  "weatherFontSize": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "weatherFontSize",
+    "type": "slider",
+    "value": 14
+  },
+  "show_weatherFeelsLike": {
+    "type": "checkbox",
+    "value": false,
+    "text": "Show feels-like temperature"
+  },
+  "show_weatherHumidity": {
+    "type": "checkbox",
+    "value": false,
+    "text": "Show humidity"
+  },
+  "show_weatherWind": {
+    "type": "checkbox",
+    "value": false,
+    "text": "Show wind speed"
+  },
+  "weatherExtraColor": {
+    "text": "Weather extra info color",
+    "type": "color",
+    "value": "#cccccc"
+  },
+  "weatherExtraFontSize": {
+    "max": 100,
+    "min": 8,
+    "step": 1,
+    "text": "Weather extra info font size",
+    "type": "slider",
+    "value": 13
+  },
+  "show_sys_info": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_sys_info"
+  },
+  "show_cpu": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_cpu"
+  },
+  "show_gpu": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_gpu"
+  },
+  "show_mem": {
+    "type": "checkbox",
+    "value": true,
+    "text": "show_mem"
+  },
+  "systemUsageTop": {
+    "max": 500,
+    "min": 0,
+    "step": 1,
+    "text": "systemUsageTop",
+    "type": "slider",
+    "value": 20
+  },
+  "systemUsageRight": {
+    "max": 500,
+    "min": 0,
+    "step": 1,
+    "text": "systemUsageRight",
+    "type": "slider",
+    "value": 20
+  },
+  "systemUsageBackground": {
+    "text": "systemUsageBackground",
+    "type": "color",
+    "value": "#000000"
+  },
+  "systemUsageColor": {
+    "text": "System usage font color",
+    "type": "color",
+    "value": "#ffffff"
+  },
+  "systemUsageFontSize": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "systemUsageFontSize",
+    "type": "slider",
+    "value": 14
+  },
+  "show_network": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Show network speed"
+  },
+  "networkBottom": {
+    "max": 500,
+    "min": 0,
+    "step": 1,
+    "text": "Network speed vertical position",
+    "type": "slider",
+    "value": 20
+  },
+  "networkRight": {
+    "max": 500,
+    "min": 0,
+    "step": 1,
+    "text": "Network speed horizontal position",
+    "type": "slider",
+    "value": 20
+  },
+  "networkColor": {
+    "text": "Network speed font color",
+    "type": "color",
+    "value": "#ffffff"
+  },
+  "networkFontSize": {
+    "max": 100,
+    "min": 8,
+    "step": 1,
+    "text": "Network speed font size",
+    "type": "slider",
+    "value": 12
+  },
+  "networkBackground": {
+    "text": "Network speed background",
+    "type": "color",
+    "value": "#000000"
+  },
+  "networkSpeedUnit": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Network speed unit",
+    "items": [
+      "Mb/s",
+      "MB/s"
+    ]
+  },
+  "mediaColor": {
+    "text": "mediaSingerColor",
+    "type": "color",
+    "value": "#cccccc"
+  },
+  "mediaTitleColor": {
+    "text": "mediaTitleColor",
+    "type": "color",
+    "value": "#ffffff"
+  },
+  "clock1TimeColor": {
+    "text": "Clock 1 Time Color",
+    "type": "color",
+    "value": "#afeeee"
+  },
+  "clock1TodayColor": {
+    "text": "Clock 1 Today Color",
+    "type": "color",
+    "value": "#afeeee"
+  },
+  "clock1OtherDaysColor": {
+    "text": "Clock 1 Other Days Color",
+    "type": "color",
+    "value": "#cccccc"
+  },
+  "clock1DateColor": {
+    "text": "Clock 1 Date Color",
+    "type": "color",
+    "value": "#afeeee"
+  },
+  "clock1TimeBottom": {
+    "max": 2000,
+    "min": 0,
+    "step": 1,
+    "text": "Clock time vertical Position",
+    "type": "slider",
+    "value": 110
+  },
+  "clock1TimeFontSize": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "Clock 1 Time Font Size",
+    "type": "slider",
+    "value": 24
+  },
+  "clock1TimeGap": {
+    "max": 50,
+    "min": 0,
+    "step": 1,
+    "text": "Clock 1 Time Gap",
+    "type": "slider",
+    "value": 5
+  },
+  "clock1AmPmFontSize": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "Clock 1 AM/PM Font Size",
+    "type": "slider",
+    "value": 16
+  },
+  "clock1DaysBottom": {
+    "max": 2000,
+    "min": 0,
+    "step": 1,
+    "text": "Clock 1 Days vertical Position",
+    "type": "slider",
+    "value": 80
+  },
+  "clock1DaysGap": {
+    "max": 50,
+    "min": 0,
+    "step": 0.1,
+    "text": "Clock 1 Days Gap",
+    "type": "slider",
+    "value": 0.7
+  },
+  "clock1DaysFontSize": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "Clock 1 Days Font Size",
+    "type": "slider",
+    "value": 18
+  },
+  "clock1DateBottom": {
+    "max": 2000,
+    "min": 0,
+    "step": 1,
+    "text": "Clock Date vertical Position",
+    "type": "slider",
+    "value": 50
+  },
+  "clock1DateGap": {
+    "max": 50,
+    "min": 0,
+    "step": 0.1,
+    "text": "Clock 1 Date Gap",
+    "type": "slider",
+    "value": 0.5
+  },
+  "clock1DateFontSize": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "Clock 1 Date Font Size",
+    "type": "slider",
+    "value": 16
+  },
+  "clock1Left": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "Clock 1 horizontal position (%)",
+    "type": "slider",
+    "value": 50
+  },
+  "clock1Top": {
+    "max": 100,
+    "min": 0,
+    "step": 1,
+    "text": "Clock 1 vertical position (100=bottom, 0=top)",
+    "type": "slider",
+    "value": 30
+  },
+  "show_clock1": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Show clock"
+  },
+  "clock24Hour": {
+    "type": "checkbox",
+    "value": false,
+    "text": "24-hour clock (off = 12-hour)"
+  },
+  "showAllDays": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Show All Days"
+  },
+  "lively_default_settings_reload": {
+    "type": "button",
+    "text": "Reload settings from LivelyProperties.json",
+    "value": "Restore default"
+  }
+}
