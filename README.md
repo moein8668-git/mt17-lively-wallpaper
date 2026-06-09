@@ -39,7 +39,7 @@ When Lively **pauses** the wallpaper (battery saver / focus mode), the animated 
 | Item | Required for | Details |
 |------|----------------|---------|
 | **Windows 10/11** | Wallpaper | |
-| **Lively Wallpaper** | Wallpaper | [Microsoft Store](https://apps.microsoft.com/store/detail/lively-wallpaper/9ntm2qc6rlws) or [GitHub releases](https://github.com/rocksdanister/lively/releases) |
+| **Lively Wallpaper** | Wallpaper | [Microsoft Store](https://apps.microsoft.com/detail/9ntm2qc6qws7) or [GitHub releases](https://github.com/rocksdanister/lively/releases) |
 | **OpenWeather API key** | Weather only | Free key at [openweathermap.org/api](https://openweathermap.org/api) — enter in Lively Customize |
 | **Python 3.10+** | Preset Manager only | [python.org](https://www.python.org/downloads/) — enable **Add Python to PATH** |
 | **Flask** | Web UI (recommended) | `pip install flask` |
