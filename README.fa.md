@@ -39,7 +39,7 @@
 | مورد | برای | جزئیات |
 |------|--------|--------|
 | **ویندوز 10/11** | والپیپر | |
-| **Lively Wallpaper** | والپیپر | [Microsoft Store](https://apps.microsoft.com/store/detail/lively-wallpaper/9ntm2qc6rlws) یا [GitHub releases](https://github.com/rocksdanister/lively/releases) |
+| **Lively Wallpaper** | والپیپر | [Microsoft Store](https://apps.microsoft.com/detail/9ntm2qc6qws7) یا [GitHub releases](https://github.com/rocksdanister/lively/releases) |
 | **کلید API OpenWeather** | فقط آب‌وهوا | کلید رایگان از [openweathermap.org/api](https://openweathermap.org/api) — در Customize لایولی وارد کنید |
 | **Python 3.10+** | فقط Preset Manager | [python.org](https://www.python.org/downloads/) — گزینه **Add Python to PATH** را فعال کنید |
 | **Flask** | رابط وب (پیشنهادی) | نصب از `preset-manager/requirements.txt` |
