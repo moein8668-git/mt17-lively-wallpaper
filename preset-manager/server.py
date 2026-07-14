@@ -3,7 +3,25 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
-from preset_store import PresetStore
+from preset_store import PresetStore, validate_preset_filename
+
+
+def status_with_persistence(
+    status: dict, persistence: dict | None = None
+) -> dict:
+    result = dict(status)
+    if not isinstance(persistence, dict) or not persistence.get("attempted"):
+        return result
+    result["livelyPersistence"] = persistence
+    result["persistenceOk"] = bool(persistence.get("ok"))
+    if not persistence.get("ok"):
+        result["partial"] = True
+        result["message"] = (
+            f"{result.get('message', 'Operation completed')}; "
+            "Lively SaveData was not updated: "
+            f"{persistence.get('error') or 'unknown error'}"
+        )
+    return result
 
 
 class PresetApiHandler(BaseHTTPRequestHandler):
@@ -72,10 +90,13 @@ class PresetApiHandler(BaseHTTPRequestHandler):
                 return
 
             if path.startswith("/api/preset/"):
-                filename = path.split("/api/preset/", 1)[1]
+                filename = validate_preset_filename(path.split("/api/preset/", 1)[1])
                 data = self.store.read_preset(filename)
                 self._send_json(200, data)
                 return
+        except ValueError as error:
+            self._send_json(400, {"error": str(error)})
+            return
         except FileNotFoundError:
             self._send_json(404, {"error": "Preset not found"})
             return
@@ -103,20 +124,26 @@ class PresetApiHandler(BaseHTTPRequestHandler):
                     self._send_json(400, {"error": "Preset data is required"})
                     return
                 entry = self.store.save_preset(name, data, filename)
+                persistence = entry.get("livelyPersistence")
                 message = f"Saved '{entry['name']}'"
                 lively_saved = entry.get("livelySavedataFiles") or []
-                if lively_saved:
+                if persistence and not persistence.get("ok"):
+                    message += (
+                        "; Lively SaveData was not updated: "
+                        f"{persistence.get('error') or 'unknown error'}"
+                    )
+                elif lively_saved:
                     message += (
                         f" (Lively monitor {entry.get('livelyMonitor', self.store.target_monitor)}"
                         f" saved)"
                     )
-                status = {
+                status = status_with_persistence({
                     "ok": True,
                     "action": "capture",
                     "message": message,
                     "name": entry["name"],
                     "file": entry["file"],
-                }
+                }, persistence)
                 if PresetApiHandler.api_server is not None:
                     PresetApiHandler.api_server.last_status = status
                 self._send_json(200, {"ok": True, "preset": entry, **status})
@@ -162,7 +189,9 @@ class PresetApiHandler(BaseHTTPRequestHandler):
                 return
 
             if path == "/api/status":
-                PresetApiHandler.api_server.last_status = payload
+                PresetApiHandler.api_server.last_status = status_with_persistence(
+                    payload, payload.get("livelyPersistence")
+                )
                 self._send_json(200, {"ok": True})
                 return
 
@@ -196,10 +225,13 @@ class PresetApiHandler(BaseHTTPRequestHandler):
 
         try:
             if path.startswith("/api/preset/"):
-                filename = path.split("/api/preset/", 1)[1]
+                filename = validate_preset_filename(path.split("/api/preset/", 1)[1])
                 self.store.delete_preset(filename)
                 self._send_json(200, {"ok": True})
                 return
+        except ValueError as error:
+            self._send_json(400, {"error": str(error)})
+            return
         except FileNotFoundError:
             self._send_json(404, {"error": "Preset not found"})
             return

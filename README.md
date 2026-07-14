@@ -42,7 +42,7 @@ When Lively **pauses** the wallpaper (battery saver / focus mode), the animated 
 | **Lively Wallpaper** | Wallpaper | [Microsoft Store](https://apps.microsoft.com/store/detail/lively-wallpaper/9ntm2qc6rlws) or [GitHub releases](https://github.com/rocksdanister/lively/releases) |
 | **OpenWeather API key** | Weather only | Free key at [openweathermap.org/api](https://openweathermap.org/api) — enter in Lively Customize |
 | **Python 3.10+** | Preset Manager only | [python.org](https://www.python.org/downloads/) — enable **Add Python to PATH** |
-| **Flask** | Web UI (recommended) | `pip install flask` |
+| **Flask** | Web UI (recommended) | Install from `preset-manager/requirements.txt` |
 
 ---
 
@@ -166,6 +166,7 @@ If the API key is missing or the request fails, the weather panel shows an error
 - **Presets are not in Customize** — too many controls caused crashes; use Preset Manager instead.
 - **Manual Apply from Preset Manager** writes to SaveData and is the reliable way to lock a look across reboots.
 - **Slideshow** does *not* write SaveData on each slide — see Part 4.
+- **Slider ranges** support wide layouts (4K / ultrawide): positions can go negative or beyond 1000px; clock anchor goes −50–150%.
 
 ---
 
@@ -177,6 +178,7 @@ The Preset Manager is a small **Python companion app** that:
 - **Applies** a saved preset to the running wallpaper
 - **Writes Lively SaveData** on Apply/Save so settings survive reboot (per monitor)
 - **Runs preset slideshow** configuration (web UI only)
+- **Exports / imports portable ZIP packages** with presets plus media, fonts, and images (web UI only)
 
 Presets are stored here:
 
@@ -185,6 +187,8 @@ Presets are stored here:
 {wallpaper folder}/presets/manifest.json
 {wallpaper folder}/presets/slideshow.json
 ```
+
+The **wallpaper folder** is auto-detected as the parent of `preset-manager/` (where `LivelyInfo.json` lives). This works no matter where you cloned the project — `D:\Themes\mt17\`, `C:\Users\You\mt17\`, etc. Point Lively at that same folder so Apply/Save and ZIP import land in the right place.
 
 ### Start the app
 
@@ -198,7 +202,7 @@ Presets are stored here:
 Install Flask (recommended):
 
 ```bat
-pip install flask
+python -m pip install -r preset-manager/requirements.txt
 ```
 
 Force a UI:
@@ -210,13 +214,16 @@ python main.py --tk
 
 ### First-time setup
 
-1. Keep **mt17 running** in Lively.
-2. In Preset Manager **Settings** (web: top-right; Tk: Settings button):
-   - **Wallpaper folder** — usually auto-detected if `preset-manager` sits inside the mt17 project. Override if needed, e.g. `...\Library\wallpapers\mt17cus2igg`.
+1. Keep **mt17 running** in Lively (added from the **same folder** that contains `preset-manager/`).
+2. Start Preset Manager — the web UI shows **Wallpaper folder (auto from script):** with your detected path.
+3. In **Settings** (web: top-right; Tk: Settings button):
+   - **Auto-detected wallpaper folder** — parent of `preset-manager/`; normally leave as-is.
+   - **Override wallpaper folder** — optional, advanced only.
    - **Monitor** — which monitor’s SaveData to update (web UI: dropdown on main page).
-3. Save → stored in `preset-manager/config.json`.
+4. Save → stored in `preset-manager/config.json` (monitor + optional override only).
 
 Apply/Save needs the wallpaper **live** in Lively. The app talks to it via `presets/_command.json` (polled ~every 1.5s) and HTTP API on port **8766**.
+If you change the API port in the manager configuration, reload the wallpaper once so it rereads `presets/_preset-api.json`. If SaveData is unavailable, the manager reports that the preset was saved locally but was not persisted for reboot.
 
 ---
 
@@ -253,6 +260,40 @@ Rotate presets like a Windows background slideshow:
 | Manual Apply | Pauses slideshow; save slideshow again with **Enable** checked to resume |
 | Cross-fade | Dual-layer background dissolve + UI fade (slideshow only; manual Apply is instant) |
 
+### Portable preset packages (ZIP, web UI only)
+
+Share a complete look — preset **plus** the media, images, and fonts it references.
+
+**Single preset ZIP**
+
+1. Select a preset → **Download preset ZIP**.
+2. Optional export privacy (checked by default when sharing):
+   - **Blank OpenWeather API key**
+   - **Randomize location** (lat/lon/city)
+3. On another PC: **Upload preset ZIP** — assets install into `media/`, `images/`, `fonts/` automatically.
+4. Import uses the name from `package.json` → `presetFile` (e.g. `gojo-1.preset.json` → **gojo-1**).
+5. Select the preset → **Apply to wallpaper**.
+
+**Full backup ZIP**
+
+- **Download full backup ZIP** — all presets, `slideshow.json`, and bundled assets.
+- **Upload full backup ZIP** — replaces presets, restores slideshow, installs assets (confirmation required).
+
+JSON download/upload remains available for settings-only backup (no media/fonts).
+
+**ZIP contents (example)**
+
+```text
+mt17-preset-gojo-1.zip
+├── package.json           ← metadata + presetFile
+├── presets/
+│   ├── manifest.json
+│   └── gojo-1.preset.json
+├── media/...
+├── images/...
+└── fonts/...
+```
+
 ### Web UI vs Tk desktop — feature comparison
 
 | Feature | Web UI (Flask) | Tk desktop (`--tk`) |
@@ -267,10 +308,23 @@ Rotate presets like a Windows background slideshow:
 | **Cross-fade settings** | **Yes** | **No** |
 | **View settings** (readable preset breakdown) | **Yes** | **No** |
 | **Download / upload single preset JSON** | **Yes** | **No** |
+| **Download / upload preset ZIP** | **Yes** | **No** |
 | **Download / upload full backup JSON** | **Yes** | **No** |
+| **Download / upload full backup ZIP** | **Yes** | **No** |
 | Wallpaper thumbnail in header | Yes | No |
 
 **Recommendation:** Install Flask and use the **web UI** for the full experience. Tk is a minimal fallback when Flask isn’t available.
+
+### Developer verification
+
+From the repository root, run:
+
+```bat
+python -m pytest
+python -m compileall preset-manager
+```
+
+These checks cover the preset manager's isolated Python behavior; they do not require or simulate a running Lively instance.
 
 ### All Preset Manager actions (web UI)
 
@@ -280,11 +334,15 @@ Rotate presets like a Windows background slideshow:
 | **Save current look** | Capture live state + update SaveData |
 | **Rename / Delete / Duplicate** | Manage preset files |
 | **View settings** | Human-readable list of saved values |
-| **Download preset JSON** | Export one preset file |
-| **Upload preset JSON** | Import one preset file |
+| **Download preset JSON** | Export settings only (no assets) |
+| **Upload preset JSON** | Import settings only |
+| **Download preset ZIP** | Export preset + media/fonts/images |
+| **Upload preset ZIP** | Import preset + install assets |
 | **Create local backup** | Copy `presets/` to `%LocalAppData%\Mt17PresetManager\backups\` |
-| **Download backup JSON** | Export all presets + manifest in one file |
+| **Download backup JSON** | Export all presets + manifest (no assets) |
 | **Upload backup JSON** | Restore from that file |
+| **Download full backup ZIP** | Export all presets + slideshow + assets |
+| **Upload full backup ZIP** | Restore all presets + slideshow + assets |
 | **Restore latest local backup** | Restore most recent backup folder |
 | **Save slideshow** | Write `slideshow.json` |
 
@@ -328,8 +386,9 @@ mt17/
     ├── webui.py               ← Flask web UI (port 8767)
     ├── server.py              ← HTTP API (port 8766)
     ├── preset_store.py        ← Presets + slideshow on disk
+    ├── preset_package.py      ← ZIP export/import + asset bundling
     ├── lively_properties.py   ← SaveData sync mapping
-    ├── lively_paths.py        ← Lively library / SaveData path helpers
+    ├── lively_paths.py        ← Script-based wallpaper path + SaveData lookup
     ├── preset_labels.py       ← Human-readable labels for View settings
     ├── config.py              ← App defaults & backup root path
     ├── requirements.txt       ← Python deps (Flask)
@@ -373,8 +432,16 @@ These enable now-playing metadata, audio visualizer data, CPU/GPU/RAM/network st
 
 1. **mt17** must be the active wallpaper in Lively.
 2. Preset Manager must be running (`start.bat`).
-3. Check **Settings** → wallpaper folder points to the installed copy Lively is actually running.
-4. Reload the wallpaper once in Lively.
+3. Lively must use the **same folder** shown as *Wallpaper folder (auto from script)* — not a different copy elsewhere.
+4. Clear any stale **override** in Settings if it points to the wrong folder.
+5. Reload the wallpaper once in Lively.
+
+### ZIP import succeeded but preset looks wrong
+
+1. Confirm status shows the correct **wallpaper folder** path.
+2. After import, click **Apply to wallpaper** (import does not auto-apply).
+3. For a **full backup ZIP**, use **Upload full backup ZIP** — not the single-preset upload.
+4. Re-importing the same ZIP overwrites the preset with the same `presetFile` name.
 
 ### Slideshow doesn’t change presets
 
@@ -386,7 +453,7 @@ These enable now-playing metadata, audio visualizer data, CPU/GPU/RAM/network st
 ### Web UI doesn’t open
 
 ```bat
-pip install flask
+python -m pip install -r preset-manager/requirements.txt
 start.bat
 ```
 
@@ -411,16 +478,14 @@ Copy updated files to `Library\wallpapers\{your-id}\` or point Lively at the dev
 | Save a theme (persistent) | Preset Manager → name → **Save current look** |
 | Load a theme (persistent) | Preset Manager → select → **Apply to wallpaper** |
 | Auto-rotate themes | Web UI → **Slideshow** → playlist → Enable → Save |
+| Share a preset (with assets) | Web UI → **Download preset ZIP** → share file |
+| Import a shared preset | Web UI → **Upload preset ZIP** → **Apply** |
 | Start Preset Manager | `preset-manager/start.bat` |
-| Full Preset Manager UI | `pip install flask` → use web UI at :8767 |
+| Full Preset Manager UI | Install `preset-manager/requirements.txt` → use web UI at :8767 |
 
 ---
 
 ## Credits & license
 
 Built for personal use with **Lively Wallpaper**, **OpenWeather**, **GPT**, and **Cursor**. Wallpaper media, fonts, and bundled assets are your own — replace `media/`, `images/`, and `fonts/` as you like.
-
----
-
-**Persian:** [README.fa.md](README.fa.md)
 

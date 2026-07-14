@@ -6,7 +6,15 @@ __pycache__/
 # Preset Manager runtime (created on save / apply)
 preset-manager/config.json
 presets/_command.json
+presets/_preset-api.json
 presets/*.preset.json
+
+
+plans/
 
 # Local reference / dev (not part of shipped wallpaper)
 lively-core-separation/
+
+# Local archives
+*.7z
+*.zip

@@ -109,8 +109,31 @@ const DEFAULT_ALBUM_ART = "res/da.png";
 const IDLE_MEDIA_TITLE = "Nothing playing";
 
 let weatherRefreshTimer = null;
-const PRESET_API = "http://127.0.0.1:8766";
+const DEFAULT_PRESET_API_PORT = 8766;
+let presetApiBase = `http://127.0.0.1:${DEFAULT_PRESET_API_PORT}`;
 let presetBridgeBusy = false;
+
+async function loadPresetApiConfig() {
+  try {
+    const response = await fetch("presets/_preset-api.json", { cache: "no-store" });
+    if (!response.ok) {
+      return;
+    }
+    const config = await response.json();
+    const port = Number(config.apiPort);
+    if (Number.isInteger(port) && port >= 1 && port <= 65535) {
+      presetApiBase = `http://127.0.0.1:${port}`;
+    }
+  } catch (error) {
+    // Keep the default port when the manager or runtime file is unavailable.
+  }
+}
+
+const presetApiReady = loadPresetApiConfig();
+
+function presetApiUrl(path) {
+  return `${presetApiBase}${path}`;
+}
 
 const PRESET_VERSION = 1;
 
@@ -582,7 +605,8 @@ async function savePresetViaApp(name, existingFile) {
   }
 
   try {
-    const response = await fetch(`${PRESET_API}/api/preset/save`, {
+    await presetApiReady;
+    const response = await fetch(presetApiUrl("/api/preset/save"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -627,7 +651,8 @@ async function loadPresetFromFile(filename, options = {}) {
 
 async function notifyPresetApp(payload) {
   try {
-    await fetch(`${PRESET_API}/api/status`, {
+    await presetApiReady;
+    await fetch(presetApiUrl("/api/status"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -639,7 +664,8 @@ async function notifyPresetApp(payload) {
 
 async function finishPresetCommand() {
   try {
-    await fetch(`${PRESET_API}/api/command/done`, { method: "POST" });
+    await presetApiReady;
+    await fetch(presetApiUrl("/api/command/done"), { method: "POST" });
   } catch (error) {
     // Preset app may be closed.
   }
@@ -659,6 +685,7 @@ async function handlePresetCommand(command) {
       message: ok ? `Applied '${command.name || command.file}'` : "Apply failed",
       name: command.name || command.file,
       file: command.file,
+      livelyPersistence: command.livelyPersistence,
     });
   } else if (command.action === "capture") {
     const ok = await savePresetViaApp(command.name, command.file);

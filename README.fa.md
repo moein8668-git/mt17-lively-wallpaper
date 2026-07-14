@@ -42,7 +42,7 @@
 | **Lively Wallpaper** | والپیپر | [Microsoft Store](https://apps.microsoft.com/store/detail/lively-wallpaper/9ntm2qc6rlws) یا [GitHub releases](https://github.com/rocksdanister/lively/releases) |
 | **کلید API OpenWeather** | فقط آب‌وهوا | کلید رایگان از [openweathermap.org/api](https://openweathermap.org/api) — در Customize لایولی وارد کنید |
 | **Python 3.10+** | فقط Preset Manager | [python.org](https://www.python.org/downloads/) — گزینه **Add Python to PATH** را فعال کنید |
-| **Flask** | رابط وب (پیشنهادی) | `pip install flask` |
+| **Flask** | رابط وب (پیشنهادی) | نصب از `preset-manager/requirements.txt` |
 
 ---
 
@@ -166,6 +166,7 @@ Library\SaveData\wpdata\{wallpaper-id}\{monitor}\LivelyProperties.json
 - **پریست در Customize نیست** — تعداد زیاد کنترل باعث کرش می‌شد؛ از Preset Manager استفاده کنید.
 - **Apply دستی از Preset Manager** در SaveData می‌نویسد و راه مطمئن برای ثابت ماندن ظاهر بعد از ری‌استارت است.
 - **اسلایدشو** در هر اسلاید SaveData نمی‌نویسد — بخش ۴ را ببینید.
+- **محدوده اسلایدرها** برای رزولوشن‌های بزرگ گسترش یافته: موقعیت‌ها می‌توانند منفی یا بالای ۱۰۰۰px باشند؛ لنگر ساعت −۵۰ تا ۱۵۰٪.
 
 ---
 
@@ -177,6 +178,7 @@ Preset Manager یک **اپ همراه Python** کوچک است که:
 - پریست ذخیره‌شده را روی والپیپر در حال اجرا **اعمال** می‌کند
 - با Apply/Save در **SaveData لایولی** می‌نویسد تا تنظیمات بعد از ری‌استارت بماند (به ازای هر مانیتور)
 - پیکربندی **اسلایدشو پریست** را انجام می‌دهد (فقط رابط وب)
+- **بسته ZIP قابل حمل** (پریست + media/fonts/images) را صادر/وارد می‌کند (فقط رابط وب)
 
 پریست‌ها اینجا ذخیره می‌شوند:
 
@@ -185,6 +187,8 @@ Preset Manager یک **اپ همراه Python** کوچک است که:
 {پوشه والپیپر}/presets/manifest.json
 {پوشه والپیپر}/presets/slideshow.json
 ```
+
+**پوشه والپیپر** خودکار از محل `preset-manager/` تشخیص داده می‌شود (همان جایی که `LivelyInfo.json` است). مهم نیست پروژه کجا باشد — لایولی باید به **همان پوشه** اشاره کند.
 
 ### اجرای برنامه
 
@@ -198,7 +202,7 @@ Preset Manager یک **اپ همراه Python** کوچک است که:
 نصب Flask (پیشنهادی):
 
 ```bat
-pip install flask
+python -m pip install -r preset-manager/requirements.txt
 ```
 
 اجبار به یک رابط:
@@ -210,13 +214,16 @@ python main.py --tk
 
 ### تنظیم اولیه
 
-1. **mt17** در Lively در حال اجرا باشد.
-2. در **Settings** Preset Manager (وب: بالا راست؛ Tk: دکمه Settings):
-   - **Wallpaper folder** — معمولاً اگر `preset-manager` داخل پروژه mt17 باشد خودکار پیدا می‌شود. در صورت نیاز override کنید، مثلاً `...\Library\wallpapers\mt17cus2igg`.
+1. **mt17** در Lively فعال باشد (از **همان پوشه**ای که `preset-manager/` داخلش است).
+2. Preset Manager را اجرا کنید — خط **Wallpaper folder (auto from script):** مسیر تشخیص‌داده‌شده را نشان می‌دهد.
+3. در **Settings** (وب: بالا راست؛ Tk: دکمه Settings):
+   - **Auto-detected wallpaper folder** — والد `preset-manager/`؛ معمولاً تغییر ندهید.
+   - **Override wallpaper folder** — اختیاری، فقط پیشرفته.
    - **Monitor** — SaveData کدام مانیتور به‌روز شود (رابط وب: منوی کشویی صفحه اصلی).
-3. Save → در `preset-manager/config.json` ذخیره می‌شود.
+4. Save → در `preset-manager/config.json` ذخیره می‌شود (مانیتور + override اختیاری).
 
 Apply/Save نیاز دارد والپیپر **زنده** در Lively باشد. برنامه از طریق `presets/_command.json` (هر ~۱.۵ ثانیه) و API روی پورت **8766** با والپیپر صحبت می‌کند.
+اگر پورت API را در تنظیمات تغییر دادید، یک‌بار والپیپر را Reload کنید تا `presets/_preset-api.json` را دوباره بخواند. اگر SaveData در دسترس نباشد، برنامه صریحاً اعلام می‌کند که پریست محلی ذخیره شده اما برای راه‌اندازی مجدد پایدار نشده است.
 
 ---
 
@@ -253,6 +260,27 @@ Apply فوراً دسکتاپ را به‌روز می‌کند **و** مقادی
 | Apply دستی | اسلایدشو متوقف می‌شود؛ دوباره با تیک **Enable** ذخیره کنید |
 | Cross-fade | محو لایه دوگانه پس‌زمینه + محو UI (فقط اسلایدشو؛ Apply دستی فوری است) |
 
+### بسته ZIP قابل حمل (فقط رابط وب)
+
+اشتراک تم کامل — پریست **به‌همراه** media، images و fonts.
+
+**ZIP تک پریست**
+
+1. پریست را انتخاب کنید → **Download preset ZIP**.
+2. گزینه‌های حریم خصوصی هنگام export (پیش‌فرض برای اشتراک فعال):
+   - **Blank OpenWeather API key**
+   - **Randomize location**
+3. روی PC دیگر: **Upload preset ZIP** — فایل‌ها در `media/`، `images/`، `fonts/` نصب می‌شوند.
+4. نام از `package.json` → `presetFile` (مثلاً `gojo-1.preset.json` → **gojo-1**).
+5. پریست را انتخاب کنید → **Apply to wallpaper**.
+
+**ZIP پشتیبان کامل**
+
+- **Download full backup ZIP** — همه پریست‌ها + `slideshow.json` + دارایی‌ها
+- **Upload full backup ZIP** — جایگزینی پریست‌ها + بازیابی اسلایدشو (با تأیید)
+
+JSON فقط تنظیمات است (بدون media/fonts).
+
 ### مقایسه رابط وب و Tk دسکتاپ
 
 | قابلیت | رابط وب (Flask) | Tk دسکتاپ (`--tk`) |
@@ -267,7 +295,9 @@ Apply فوراً دسکتاپ را به‌روز می‌کند **و** مقادی
 | **تنظیمات Cross-fade** | **بله** | **خیر** |
 | **View settings** (نمایش خوانا پریست) | **بله** | **خیر** |
 | **دانلود / آپلود JSON تک پریست** | **بله** | **خیر** |
+| **دانلود / آپلود ZIP تک پریست** | **بله** | **خیر** |
 | **دانلود / آپلود JSON پشتیبان کامل** | **بله** | **خیر** |
+| **دانلود / آپلود ZIP پشتیبان کامل** | **بله** | **خیر** |
 | تصویر بندانگشتی والپیپر در هدر | بله | خیر |
 
 **پیشنهاد:** Flask را نصب کنید و از **رابط وب** برای تجربه کامل استفاده کنید. Tk فقط fallback ساده وقتی Flask در دسترس نیست.
@@ -280,11 +310,15 @@ Apply فوراً دسکتاپ را به‌روز می‌کند **و** مقادی
 | **Save current look** | ثبت وضعیت زنده + به‌روز SaveData |
 | **Rename / Delete / Duplicate** | مدیریت فایل پریست |
 | **View settings** | فهرست خوانای مقادیر ذخیره‌شده |
-| **Download preset JSON** | خروجی یک پریست |
-| **Upload preset JSON** | ورود یک پریست |
+| **Download preset JSON** | فقط تنظیمات (بدون دارایی) |
+| **Upload preset JSON** | فقط تنظیمات |
+| **Download preset ZIP** | پریست + media/fonts/images |
+| **Upload preset ZIP** | ورود پریست + نصب دارایی‌ها |
 | **Create local backup** | کپی `presets/` به `%LocalAppData%\Mt17PresetManager\backups\` |
-| **Download backup JSON** | خروجی همه پریست‌ها + manifest در یک فایل |
+| **Download backup JSON** | همه پریست‌ها + manifest (بدون دارایی) |
 | **Upload backup JSON** | بازیابی از آن فایل |
+| **Download full backup ZIP** | همه پریست‌ها + اسلایدشو + دارایی‌ها |
+| **Upload full backup ZIP** | بازیابی کامل + دارایی‌ها |
 | **Restore latest local backup** | بازیابی آخرین پوشه پشتیبان |
 | **Save slideshow** | نوشتن `slideshow.json` |
 
@@ -328,8 +362,9 @@ mt17/
     ├── webui.py               ← رابط وب Flask (پورت 8767)
     ├── server.py              ← API HTTP (پورت 8766)
     ├── preset_store.py        ← پریست و اسلایدشو روی دیسک
+    ├── preset_package.py      ← صادر/وارد ZIP + بسته‌بندی دارایی‌ها
     ├── lively_properties.py   ← نگاشت همگام‌سازی SaveData
-    ├── lively_paths.py        ← کمک‌مسیر کتابخانه / SaveData لایولی
+    ├── lively_paths.py        ← مسیر از محل اسکریپت + یافتن SaveData
     ├── preset_labels.py       ← برچسب‌های خوانا برای View settings
     ├── config.py              ← پیش‌فرض‌ها و مسیر پشتیبان
     ├── requirements.txt       ← وابستگی Python (Flask)
@@ -373,8 +408,16 @@ mt17/
 
 1. **mt17** باید والپیپر فعال در Lively باشد.
 2. Preset Manager باید در حال اجرا باشد (`start.bat`).
-3. **Settings** → مسیر پوشه والپیپر به نسخه‌ای اشاره کند که Lively واقعاً اجرا می‌کند.
-4. والپیپر را یک‌بار در Lively reload کنید.
+3. Lively باید از **همان پوشه**ای استفاده کند که *Wallpaper folder (auto from script)* نشان می‌دهد.
+4. اگر **override** قدیمی در Settings است، آن را پاک کنید.
+5. والپیپر را یک‌بار در Lively reload کنید.
+
+### ZIP وارد شد ولی ظاهر درست نیست
+
+1. مسیر **wallpaper folder** در پیام وضعیت را بررسی کنید.
+2. بعد از import حتماً **Apply to wallpaper** بزنید.
+3. برای پشتیبان کامل از **Upload full backup ZIP** استفاده کنید، نه upload تک پریست.
+4. import مجدد همان ZIP، پریست با همان نام `presetFile` را بازنویسی می‌کند.
 
 ### اسلایدشو پریست عوض نمی‌شود
 
@@ -386,7 +429,7 @@ mt17/
 ### رابط وب باز نمی‌شود
 
 ```bat
-pip install flask
+python -m pip install -r preset-manager/requirements.txt
 start.bat
 ```
 
@@ -411,8 +454,10 @@ Python را با **Add to PATH** دوباره نصب کنید، یا از ترم
 | ذخیره تم (ماندگار) | Preset Manager → نام → **Save current look** |
 | بارگذاری تم (ماندگار) | Preset Manager → انتخاب → **Apply to wallpaper** |
 | چرخش خودکار تم‌ها | رابط وب → **Slideshow** → پلی‌لیست → Enable → Save |
+| اشتراک پریست (با دارایی) | رابط وب → **Download preset ZIP** |
+| ورود پریست اشتراکی | رابط وب → **Upload preset ZIP** → **Apply** |
 | اجرای Preset Manager | `preset-manager/start.bat` |
-| رابط کامل Preset Manager | `pip install flask` → رابط وب روی :8767 |
+| رابط کامل Preset Manager | نصب `preset-manager/requirements.txt` → رابط وب روی :8767 |
 
 ---
 

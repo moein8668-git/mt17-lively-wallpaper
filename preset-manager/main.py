@@ -319,9 +319,15 @@ class PresetManagerApp:
             name=entry["name"],
             file=entry["file"],
         )
+        persistence = result.get("livelyPersistence") or {}
         lively_count = len(result.get("livelySavedataFiles") or [])
         label = f"Applying '{entry['name']}' on monitor {monitor}"
-        if lively_count:
+        if persistence.get("attempted") and not persistence.get("ok"):
+            label += (
+                "; Lively SaveData was not updated: "
+                f"{persistence.get('error') or 'unknown error'}"
+            )
+        elif lively_count:
             label += f" (+ Lively saved for {lively_count} monitor(s))"
         self.begin_wait(
             "apply",
@@ -519,7 +525,10 @@ if __name__ == "__main__":
         PresetManagerApp().run()
     elif force_web:
         if not flask_available():
-            print("Flask is not installed. Install it with: pip install flask")
+            print(
+                "Flask is not installed. Install dependencies with: "
+                "python -m pip install -r requirements.txt"
+            )
             print("Starting desktop UI instead.")
             PresetManagerApp().run()
         else:

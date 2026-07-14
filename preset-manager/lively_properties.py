@@ -304,7 +304,7 @@ class LivelySettingsSync:
                 f"No Lively SaveData found for monitor '{label}'. Is this wallpaper in Lively?"
             )
 
-        template_path = self.resolver.dev_wallpaper_path
+        template_path = self.resolver.local_wallpaper_path
         template = None
         if template_path:
             template_file = template_path / "LivelyProperties.json"

@@ -1,4 +1,17 @@
 {
   "version": 1,
-  "presets": []
+  "presets": [
+    {
+      "id": "gabimaru-1",
+      "name": "gabimaru-1",
+      "file": "gabimaru-1.preset.json",
+      "updated": "2026-07-14T20:21:51+00:00"
+    },
+    {
+      "id": "gojo-1",
+      "name": "gojo-1",
+      "file": "gojo-1.preset.json",
+      "updated": "2026-07-14T20:23:00+00:00"
+    }
+  ]
 }

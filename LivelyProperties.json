@@ -73,7 +73,7 @@
     "text": "show_cover"
   },
   "albumArtSize": {
-    "max": 1000,
+    "max": 3000,
     "min": 0,
     "step": 1,
     "text": "albumArtSize",
@@ -86,7 +86,7 @@
     "text": "show_song_name"
   },
   "titleFontSize": {
-    "max": 100,
+    "max": 300,
     "min": 0,
     "step": 1,
     "text": "titleFontSize",
@@ -99,7 +99,7 @@
     "text": "show_singer"
   },
   "artistFontSize": {
-    "max": 100,
+    "max": 300,
     "min": 0,
     "step": 1,
     "text": "artistFontSize",
@@ -107,39 +107,39 @@
     "value": 15
   },
   "visualizerLeft": {
-    "max": 1000,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "visualizer horizontal",
     "type": "slider",
     "value": 130
   },
   "visualizerTop": {
-    "max": 1000,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "visualizer vertical",
     "type": "slider",
     "value": 100
   },
   "visualizerWidth": {
-    "max": 800,
-    "min": 20,
+    "max": 5000,
+    "min": 10,
     "step": 1,
     "text": "Visualizer width",
     "type": "slider",
     "value": 100
   },
   "visualizerHeight": {
-    "max": 400,
-    "min": 10,
+    "max": 2000,
+    "min": 5,
     "step": 1,
     "text": "Visualizer height",
     "type": "slider",
     "value": 30
   },
   "visualizerMargin": {
-    "max": 200,
+    "max": 1000,
     "min": 0,
     "step": 1,
     "text": "Space between song info and visualizer",
@@ -162,24 +162,24 @@
     "value": "#000000"
   },
   "contentTop": {
-    "max": 1000,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "Media block vertical position",
     "type": "slider",
     "value": 20
   },
   "contentLeft": {
-    "max": 1000,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "Media block horizontal position",
     "type": "slider",
     "value": 20
   },
   "songNameLimit": {
-    "max": 100,
-    "min": 5,
+    "max": 500,
+    "min": 1,
     "step": 1,
     "text": "Song title character limit",
     "type": "slider",
@@ -257,16 +257,16 @@
     "value": 180
   },
   "weatherbottom": {
-    "max": 500,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "weatherbottom",
     "type": "slider",
     "value": 30
   },
   "weatherLeft": {
-    "max": 500,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "weatherLeft",
     "type": "slider",
@@ -278,7 +278,7 @@
     "value": "#ffffff"
   },
   "weatherTempFontSize": {
-    "max": 100,
+    "max": 300,
     "min": 0,
     "step": 1,
     "text": "Weather temperature font size",
@@ -296,7 +296,7 @@
     "value": "#000000"
   },
   "weatherIconSize": {
-    "max": 500,
+    "max": 800,
     "min": 0,
     "step": 1,
     "text": "weatherIconSize",
@@ -304,7 +304,7 @@
     "value": 40
   },
   "weatherFontSize": {
-    "max": 100,
+    "max": 300,
     "min": 0,
     "step": 1,
     "text": "weatherFontSize",
@@ -332,8 +332,8 @@
     "value": "#cccccc"
   },
   "weatherExtraFontSize": {
-    "max": 100,
-    "min": 8,
+    "max": 300,
+    "min": 1,
     "step": 1,
     "text": "Weather extra info font size",
     "type": "slider",
@@ -360,16 +360,16 @@
     "text": "show_mem"
   },
   "systemUsageTop": {
-    "max": 500,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "systemUsageTop",
     "type": "slider",
     "value": 20
   },
   "systemUsageRight": {
-    "max": 500,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "systemUsageRight",
     "type": "slider",
@@ -386,7 +386,7 @@
     "value": "#ffffff"
   },
   "systemUsageFontSize": {
-    "max": 100,
+    "max": 300,
     "min": 0,
     "step": 1,
     "text": "systemUsageFontSize",
@@ -399,16 +399,16 @@
     "text": "Show network speed"
   },
   "networkBottom": {
-    "max": 500,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "Network speed vertical position",
     "type": "slider",
     "value": 20
   },
   "networkRight": {
-    "max": 500,
-    "min": 0,
+    "max": 4000,
+    "min": -2000,
     "step": 1,
     "text": "Network speed horizontal position",
     "type": "slider",
@@ -420,8 +420,8 @@
     "value": "#ffffff"
   },
   "networkFontSize": {
-    "max": 100,
-    "min": 8,
+    "max": 300,
+    "min": 1,
     "step": 1,
     "text": "Network speed font size",
     "type": "slider",
@@ -472,7 +472,7 @@
     "value": "#afeeee"
   },
   "clock1TimeBottom": {
-    "max": 2000,
+    "max": 4000,
     "min": 0,
     "step": 1,
     "text": "Clock time vertical Position",
@@ -480,7 +480,7 @@
     "value": 110
   },
   "clock1TimeFontSize": {
-    "max": 100,
+    "max": 300,
     "min": 0,
     "step": 1,
     "text": "Clock 1 Time Font Size",
@@ -488,7 +488,7 @@
     "value": 24
   },
   "clock1TimeGap": {
-    "max": 50,
+    "max": 200,
     "min": 0,
     "step": 1,
     "text": "Clock 1 Time Gap",
@@ -496,7 +496,7 @@
     "value": 5
   },
   "clock1AmPmFontSize": {
-    "max": 100,
+    "max": 300,
     "min": 0,
     "step": 1,
     "text": "Clock 1 AM/PM Font Size",
@@ -504,7 +504,7 @@
     "value": 16
   },
   "clock1DaysBottom": {
-    "max": 2000,
+    "max": 4000,
     "min": 0,
     "step": 1,
     "text": "Clock 1 Days vertical Position",
@@ -512,7 +512,7 @@
     "value": 80
   },
   "clock1DaysGap": {
-    "max": 50,
+    "max": 200,
     "min": 0,
     "step": 0.1,
     "text": "Clock 1 Days Gap",
@@ -520,7 +520,7 @@
     "value": 0.7
   },
   "clock1DaysFontSize": {
-    "max": 100,
+    "max": 300,
     "min": 0,
     "step": 1,
     "text": "Clock 1 Days Font Size",
@@ -528,7 +528,7 @@
     "value": 18
   },
   "clock1DateBottom": {
-    "max": 2000,
+    "max": 4000,
     "min": 0,
     "step": 1,
     "text": "Clock Date vertical Position",
@@ -536,7 +536,7 @@
     "value": 50
   },
   "clock1DateGap": {
-    "max": 50,
+    "max": 200,
     "min": 0,
     "step": 0.1,
     "text": "Clock 1 Date Gap",
@@ -544,7 +544,7 @@
     "value": 0.5
   },
   "clock1DateFontSize": {
-    "max": 100,
+    "max": 300,
     "min": 0,
     "step": 1,
     "text": "Clock 1 Date Font Size",
@@ -552,16 +552,16 @@
     "value": 16
   },
   "clock1Left": {
-    "max": 100,
-    "min": 0,
+    "max": 150,
+    "min": -50,
     "step": 1,
     "text": "Clock 1 horizontal position (%)",
     "type": "slider",
     "value": 50
   },
   "clock1Top": {
-    "max": 100,
-    "min": 0,
+    "max": 150,
+    "min": -50,
     "step": 1,
     "text": "Clock 1 vertical position (100=bottom, 0=top)",
     "type": "slider",

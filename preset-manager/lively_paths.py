@@ -6,6 +6,21 @@ from pathlib import Path
 PRESET_MANAGER_DIR = Path(__file__).resolve().parent
 
 
+def wallpaper_folder_from_script() -> Path:
+    """
+    Wallpaper root is always the folder that contains preset-manager.
+    Works no matter where the user cloned or copied the project.
+    """
+    parent = PRESET_MANAGER_DIR.parent
+    info_path = parent / "LivelyInfo.json"
+    if not info_path.exists():
+        raise FileNotFoundError(
+            "preset-manager must live inside the mt17 wallpaper folder. "
+            f"Expected LivelyInfo.json next to preset-manager, looked in: {parent}"
+        )
+    return parent.resolve()
+
+
 def lively_library_roots() -> list[Path]:
     roots: list[Path] = []
     candidates = [
@@ -46,96 +61,63 @@ def is_library_wallpaper(path: Path) -> bool:
         return False
 
 
-def find_installed_wallpaper_by_title(title: str) -> Path | None:
+def find_savedata_by_title(title: str) -> Path | None:
+    """Find Lively SaveData wpdata folder for a wallpaper title."""
     for library_root in lively_library_roots():
+        wpdata_root = library_root / "SaveData" / "wpdata"
         wallpapers_dir = library_root / "wallpapers"
-        if not wallpapers_dir.exists():
+        if not wpdata_root.exists():
             continue
-        for folder in wallpapers_dir.iterdir():
-            if folder.is_dir() and read_lively_title(folder) == title:
+        for folder in wpdata_root.iterdir():
+            if not folder.is_dir():
+                continue
+            wallpaper_candidate = wallpapers_dir / folder.name
+            if wallpaper_candidate.exists() and read_lively_title(wallpaper_candidate) == title:
                 return folder.resolve()
     return None
 
 
 class LivelyPathResolver:
-    """Auto-detect installed wallpaper + SaveData from preset-manager parent folder."""
+    """Resolve paths from preset-manager script location + Lively SaveData."""
 
     def __init__(self, override_path: Path | None = None):
-        self.dev_wallpaper_path = self._detect_dev_wallpaper()
+        self.local_wallpaper_path = wallpaper_folder_from_script()
         self.override_path = Path(override_path).resolve() if override_path else None
 
-    @staticmethod
-    def _detect_dev_wallpaper() -> Path | None:
-        parent = PRESET_MANAGER_DIR.parent
-        if (parent / "LivelyInfo.json").exists() and (parent / "index.html").exists():
-            return parent.resolve()
-        return None
+    def wallpaper_path(self) -> Path:
+        """
+        Folder used for presets, assets, and wallpaper commands.
+        Defaults to the parent of preset-manager (script location).
+        """
+        if self.override_path and self.override_path.exists():
+            return self.override_path
+        return self.local_wallpaper_path
+
+    # Backward-compatible alias used across the app.
+    def installed_wallpaper_path(self) -> Path:
+        return self.wallpaper_path()
 
     def source_title(self) -> str | None:
-        if self.dev_wallpaper_path:
-            title = read_lively_title(self.dev_wallpaper_path)
-            if title:
-                return title
-        if self.override_path:
-            return read_lively_title(self.override_path)
-        return None
-
-    def installed_wallpaper_path(self) -> Path:
-        title = self.source_title()
-        if title:
-            found = find_installed_wallpaper_by_title(title)
-            if found:
-                return found
-
-        if self.override_path and self.override_path.exists():
-            if is_library_wallpaper(self.override_path):
-                return self.override_path
-            if title:
-                found = find_installed_wallpaper_by_title(title)
-                if found:
-                    return found
-            return self.override_path
-
-        if self.dev_wallpaper_path and self.dev_wallpaper_path.exists():
-            return self.dev_wallpaper_path
-
-        for library_root in lively_library_roots():
-            wallpapers_dir = library_root / "wallpapers"
-            if wallpapers_dir.exists():
-                for folder in wallpapers_dir.iterdir():
-                    if folder.is_dir() and (folder / "LivelyInfo.json").exists():
-                        return folder.resolve()
-
-        raise FileNotFoundError(
-            "Could not find wallpaper in Lively. Add mt17 to Lively first."
-        )
+        return read_lively_title(self.wallpaper_path())
 
     def library_root(self) -> Path | None:
-        installed = self.installed_wallpaper_path()
-        if is_library_wallpaper(installed):
-            return installed.parent.parent.resolve()
+        wallpaper = self.wallpaper_path()
+        if is_library_wallpaper(wallpaper):
+            return wallpaper.parent.parent.resolve()
         return lively_library_roots()[0] if lively_library_roots() else None
 
     def savedata_wpdata_dir(self) -> Path | None:
-        installed = self.installed_wallpaper_path()
-        if is_library_wallpaper(installed):
-            return installed.parent.parent / "SaveData" / "wpdata" / installed.name
+        wallpaper = self.wallpaper_path()
 
-        title = self.source_title()
-        if not title:
-            return None
+        if is_library_wallpaper(wallpaper):
+            return wallpaper.parent.parent / "SaveData" / "wpdata" / wallpaper.name
 
-        for library_root in lively_library_roots():
-            wpdata_root = library_root / "SaveData" / "wpdata"
-            wallpapers_dir = library_root / "wallpapers"
-            if not wpdata_root.exists():
-                continue
-            for folder in wpdata_root.iterdir():
-                if not folder.is_dir():
-                    continue
-                wallpaper_candidate = wallpapers_dir / folder.name
-                if wallpaper_candidate.exists() and read_lively_title(wallpaper_candidate) == title:
-                    return folder.resolve()
+        title = read_lively_title(self.local_wallpaper_path)
+        if title:
+            found = find_savedata_by_title(title)
+            if found:
+                return found
+
         return None
 
     def list_monitors(self) -> list[dict]:
@@ -185,17 +167,22 @@ class LivelyPathResolver:
         return files
 
     def summary(self) -> dict:
-        installed = self.installed_wallpaper_path()
+        wallpaper = self.wallpaper_path()
         savedata = self.savedata_wpdata_dir()
         monitors = self.list_monitors()
+        using_override = (
+            self.override_path is not None
+            and self.override_path.resolve() == wallpaper.resolve()
+        )
         return {
-            "devWallpaperPath": str(self.dev_wallpaper_path) if self.dev_wallpaper_path else None,
+            "scriptWallpaperPath": str(self.local_wallpaper_path),
             "overridePath": str(self.override_path) if self.override_path else None,
-            "installedWallpaperPath": str(installed),
-            "wallpaperId": installed.name,
+            "installedWallpaperPath": str(wallpaper),
+            "pathSource": "override" if using_override else "script",
+            "wallpaperId": wallpaper.name,
             "savedataDir": str(savedata) if savedata else None,
             "monitors": monitors,
             "monitorPropertyFiles": [item["propertyFile"] for item in monitors],
             "title": self.source_title(),
-            "autoDetected": True,
+            "autoDetected": not using_override,
         }

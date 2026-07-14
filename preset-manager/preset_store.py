@@ -1,6 +1,7 @@
 import json
 import re
 import shutil
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -28,6 +29,16 @@ def sanitize_filename(name: str) -> str:
     if not cleaned.endswith(PRESET_SUFFIX):
         cleaned = f"{cleaned}{PRESET_SUFFIX}"
     return cleaned
+
+
+def validate_preset_filename(filename: str) -> str:
+    if not isinstance(filename, str) or not filename:
+        raise ValueError("Invalid preset file")
+    if filename != Path(filename).name or "\\" in filename or "/" in filename:
+        raise ValueError("Invalid preset file")
+    if not filename.endswith(PRESET_SUFFIX):
+        raise ValueError("Invalid preset file")
+    return filename
 
 
 from lively_properties import LivelySettingsSync
@@ -179,7 +190,15 @@ class PresetStore:
 
     def sync_manifest_with_disk(self) -> dict:
         manifest = self._read_manifest()
-        known_files = {entry["file"] for entry in manifest.get("presets", [])}
+        valid_entries = [
+            entry
+            for entry in manifest.get("presets", [])
+            if isinstance(entry, dict)
+            and isinstance(entry.get("file"), str)
+            and self._preset_path(entry["file"], must_exist=False) is not None
+        ]
+        manifest["presets"] = valid_entries
+        known_files = {entry["file"] for entry in valid_entries}
         on_disk = sorted(
             path.name for path in self.presets_dir.glob(f"*{PRESET_SUFFIX}")
         )
@@ -200,7 +219,7 @@ class PresetStore:
         manifest["presets"] = [
             entry
             for entry in manifest.get("presets", [])
-            if (self.presets_dir / entry["file"]).exists()
+            if self._preset_path(entry["file"], must_exist=False).exists()
         ]
         self._write_manifest(manifest)
         return manifest
@@ -210,7 +229,7 @@ class PresetStore:
         return sorted(manifest.get("presets", []), key=lambda item: item["name"].lower())
 
     def read_preset(self, filename: str) -> dict:
-        path = self.presets_dir / filename
+        path = self._preset_path(filename)
         if not path.exists():
             raise FileNotFoundError(filename)
         with path.open("r", encoding="utf-8") as handle:
@@ -219,7 +238,7 @@ class PresetStore:
     def save_preset(self, name: str, data: dict, filename: str | None = None) -> dict:
         manifest = self.sync_manifest_with_disk()
         filename = filename or sanitize_filename(name)
-        path = self.presets_dir / filename
+        path = self._preset_path(filename, must_exist=False)
 
         with path.open("w", encoding="utf-8") as handle:
             json.dump(data, handle, indent=2)
@@ -240,26 +259,40 @@ class PresetStore:
 
         entry["updated"] = utc_now_iso()
         self._write_manifest(manifest)
-        lively_saved = self._sync_lively_savedata(data, self.target_monitor)
-        if lively_saved:
-            entry["livelySavedataFiles"] = lively_saved
+        persistence = self._sync_lively_savedata(data, self.target_monitor)
+        entry["livelyPersistence"] = persistence
+        if persistence["files"]:
+            entry["livelySavedataFiles"] = persistence["files"]
             entry["livelyMonitor"] = self.target_monitor
         self.create_backup()
         return entry
 
-    def _sync_lively_savedata(self, preset_data: dict, monitor_id: str | None = None) -> list[str]:
+    def _sync_lively_savedata(
+        self, preset_data: dict, monitor_id: str | None = None
+    ) -> dict:
         monitor = monitor_id or self.target_monitor
         try:
             updated = self.lively_sync.apply_preset(preset_data, monitor)
-            return [str(path) for path in updated]
-        except FileNotFoundError:
-            return []
+            return {
+                "ok": True,
+                "attempted": True,
+                "files": [str(path) for path in updated],
+                "error": None,
+            }
+        except (FileNotFoundError, OSError) as error:
+            return {
+                "ok": False,
+                "attempted": True,
+                "files": [],
+                "error": str(error),
+            }
 
     def list_monitors(self) -> list[dict]:
         return self.lively_sync.list_monitors()
 
     def rename_preset(self, filename: str, new_name: str) -> dict:
         manifest = self.sync_manifest_with_disk()
+        filename = validate_preset_filename(filename)
         entry = next(
             (item for item in manifest["presets"] if item["file"] == filename),
             None,
@@ -268,8 +301,8 @@ class PresetStore:
             raise FileNotFoundError(filename)
 
         new_filename = sanitize_filename(new_name)
-        old_path = self.presets_dir / filename
-        new_path = self.presets_dir / new_filename
+        old_path = self._preset_path(filename, must_exist=False)
+        new_path = self._preset_path(new_filename, must_exist=False)
         if old_path.exists() and old_path != new_path:
             if new_path.exists():
                 raise FileExistsError(new_filename)
@@ -314,7 +347,8 @@ class PresetStore:
 
     def delete_preset(self, filename: str) -> None:
         manifest = self.sync_manifest_with_disk()
-        path = self.presets_dir / filename
+        filename = validate_preset_filename(filename)
+        path = self._preset_path(filename, must_exist=False)
         if path.exists():
             path.unlink()
 
@@ -342,10 +376,40 @@ class PresetStore:
         preset_name = name or Path(source_file).stem.replace("-", " ")
         return self.save_preset(preset_name, data)
 
-    def import_preset_data(self, data: dict, name: str | None = None) -> dict:
+    def import_preset_from_zip(
+        self,
+        data: dict,
+        name: str,
+        filename: str,
+    ) -> dict:
+        if not isinstance(data, dict):
+            raise ValueError("Preset data must be a JSON object")
+        preset_name = name.strip() or Path(filename).name[: -len(PRESET_SUFFIX)]
+        preset_file = Path(filename).name
+        if not preset_file.endswith(PRESET_SUFFIX):
+            preset_file = sanitize_filename(preset_name)
+        return self.save_preset(preset_name, data, filename=preset_file)
+
+    def import_preset_data(
+        self,
+        data: dict,
+        name: str | None = None,
+        *,
+        avoid_name_collision: bool = False,
+    ) -> dict:
         if not isinstance(data, dict):
             raise ValueError("Preset data must be a JSON object")
         preset_name = (name or "Imported Preset").strip() or "Imported Preset"
+        if avoid_name_collision:
+            manifest = self.sync_manifest_with_disk()
+            existing = {item["name"].casefold() for item in manifest.get("presets", [])}
+            if preset_name.casefold() in existing:
+                base = f"{preset_name} (imported)"
+                preset_name = base
+                counter = 2
+                while preset_name.casefold() in existing:
+                    preset_name = f"{base} {counter}"
+                    counter += 1
         return self.save_preset(preset_name, data)
 
     def export_preset(self, filename: str, destination: Path) -> None:
@@ -378,11 +442,24 @@ class PresetStore:
         if not source.exists():
             return None
 
-        if self.presets_dir.exists():
-            shutil.rmtree(self.presets_dir)
-        shutil.copytree(source, self.presets_dir)
+        with tempfile.TemporaryDirectory(dir=self.presets_dir.parent) as temp_dir:
+            stage = Path(temp_dir) / "presets"
+            shutil.copytree(source, stage)
+            self._replace_presets_directory(stage)
         self.sync_manifest_with_disk()
         return latest
+
+    def _replace_presets_directory(self, staged_dir: Path) -> None:
+        old_dir = staged_dir.parent / "previous-presets"
+        if old_dir.exists():
+            shutil.rmtree(old_dir)
+        self.presets_dir.rename(old_dir)
+        try:
+            staged_dir.rename(self.presets_dir)
+        except Exception:
+            old_dir.rename(self.presets_dir)
+            raise
+        shutil.rmtree(old_dir, ignore_errors=True)
 
     def build_backup_bundle(self) -> dict:
         manifest = self.sync_manifest_with_disk()
@@ -405,44 +482,77 @@ class PresetStore:
         if not isinstance(manifest, dict) or not isinstance(presets, dict):
             raise ValueError("Backup must include manifest and presets")
 
-        self.presets_dir.mkdir(parents=True, exist_ok=True)
-        for path in self.presets_dir.iterdir():
-            if path.name in (COMMAND_FILE, SLIDESHOW_FILE):
-                continue
-            if path.is_file():
-                path.unlink()
-            elif path.is_dir():
-                shutil.rmtree(path)
-
-        saved_count = 0
         for filename, data in presets.items():
-            if not isinstance(filename, str) or not filename.endswith(PRESET_SUFFIX):
-                continue
+            validate_preset_filename(filename)
             if not isinstance(data, dict):
-                continue
-            with (self.presets_dir / filename).open("w", encoding="utf-8") as handle:
-                json.dump(data, handle, indent=2)
-            saved_count += 1
+                raise ValueError("Backup preset data must be JSON objects")
+        manifest_entries = manifest.get("presets", [])
+        if not isinstance(manifest_entries, list):
+            raise ValueError("Backup manifest presets must be an array")
+        for entry in manifest_entries:
+            if not isinstance(entry, dict):
+                raise ValueError("Backup manifest entries must be objects")
+            validate_preset_filename(entry.get("file"))
 
-        self._write_manifest(manifest)
+        with tempfile.TemporaryDirectory(dir=self.presets_dir.parent) as temp_dir:
+            stage = Path(temp_dir) / "presets"
+            stage.mkdir()
+            for preserved_name in (COMMAND_FILE, SLIDESHOW_FILE):
+                source = self.presets_dir / preserved_name
+                if source.exists():
+                    shutil.copy2(source, stage / preserved_name)
+
+            saved_count = 0
+            for filename, data in presets.items():
+                path = stage / validate_preset_filename(filename)
+                with path.open("w", encoding="utf-8") as handle:
+                    json.dump(data, handle, indent=2)
+                saved_count += 1
+
+            with (stage / MANIFEST_NAME).open("w", encoding="utf-8") as handle:
+                json.dump(manifest, handle, indent=2)
+            self._replace_presets_directory(stage)
+
         self.sync_manifest_with_disk()
         self.create_backup()
         return saved_count
 
     def write_command(self, action: str, monitor: str | None = None, **payload) -> dict:
         monitor_id = str(monitor or self.target_monitor)
-        lively_saved: list[str] = []
+        persistence = {"ok": True, "attempted": False, "files": [], "error": None}
         if action == "apply" and payload.get("file"):
+            payload["file"] = validate_preset_filename(payload["file"])
             preset_data = self.read_preset(payload["file"])
-            lively_saved = self._sync_lively_savedata(preset_data, monitor_id)
+            persistence = self._sync_lively_savedata(preset_data, monitor_id)
             self._pause_slideshow_for_manual_apply()
         elif action == "capture":
             pass
 
-        command = {"action": action, "monitor": monitor_id, **payload}
+        command = {
+            "action": action,
+            "monitor": monitor_id,
+            "livelyPersistence": persistence,
+            **payload,
+        }
         with (self.presets_dir / COMMAND_FILE).open("w", encoding="utf-8") as handle:
             json.dump(command, handle)
-        return {"livelySavedataFiles": lively_saved, "monitor": monitor_id}
+        return {
+            "livelySavedataFiles": persistence["files"],
+            "livelyPersistence": persistence,
+            "monitor": monitor_id,
+        }
+
+    def _preset_path(self, filename: str, *, must_exist: bool = True) -> Path:
+        filename = validate_preset_filename(filename)
+        root = self.presets_dir.resolve()
+        candidate = (root / filename).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError as error:
+            raise ValueError("Invalid preset file") from error
+        if must_exist and not candidate.exists():
+            return candidate
+        return candidate
 
     def clear_command(self) -> None:
         path = self.presets_dir / COMMAND_FILE

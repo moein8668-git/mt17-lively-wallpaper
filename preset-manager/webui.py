@@ -1,27 +1,47 @@
 import json
 import webbrowser
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request, send_file
 from io import BytesIO
 
-from config import BACKUP_ROOT, create_preset_store, load_config, save_config
+from config import (
+    BACKUP_ROOT,
+    create_preset_store,
+    load_config,
+    normalize_port,
+    save_config,
+    write_api_port_runtime,
+)
 from preset_labels import build_preset_view
-from preset_store import PRESET_SUFFIX, PresetStore
-from server import PresetApiServer
+from preset_package import (
+    MAX_UPLOAD_BYTES,
+    PresetPackager,
+    parse_export_options,
+)
+from preset_store import PRESET_SUFFIX, PresetStore, validate_preset_filename
+from server import PresetApiServer, status_with_persistence
 
 
 def safe_preset_filename(filename: str) -> str:
-    name = Path(filename).name
-    if not name.endswith(PRESET_SUFFIX):
-        raise ValueError("Invalid preset file")
-    return name
+    return validate_preset_filename(filename)
+
+
+def read_upload_limited(upload) -> bytes:
+    raw = upload.read(MAX_UPLOAD_BYTES + 1)
+    if len(raw) > MAX_UPLOAD_BYTES:
+        raise ValueError(
+            f"Upload is too large (maximum {MAX_UPLOAD_BYTES} bytes)"
+        )
+    return raw
 
 
 def create_services(config: dict):
     store = create_preset_store(config)
-    api_port = int(config.get("apiPort", 8766))
+    api_port = normalize_port(config.get("apiPort", 8766))
+    write_api_port_runtime(store.wallpaper_path, api_port)
     api_server = PresetApiServer(store, port=api_port)
     api_server.start()
     return store, api_server, api_port
@@ -32,17 +52,26 @@ def create_app(config: dict):
     web_port = int(config.get("webPort", 8767))
 
     app = Flask(__name__)
+    app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES + (1024 * 1024)
     app.config["APP_CONFIG"] = config
     app.config["STORE"] = store
     app.config["API_SERVER"] = api_server
     app.config["API_PORT"] = api_port
     app.config["WEB_PORT"] = web_port
 
+    @app.errorhandler(413)
+    def request_too_large(_error):
+        return jsonify({"error": f"Upload is too large (maximum {MAX_UPLOAD_BYTES} bytes)"}), 400
+
     def current_config() -> dict:
         return app.config["APP_CONFIG"]
 
     def current_store() -> PresetStore:
         return app.config["STORE"]
+
+    def current_packager() -> PresetPackager:
+        store = current_store()
+        return PresetPackager(store.wallpaper_path, store.presets_dir)
 
     def current_api_server() -> PresetApiServer:
         return app.config["API_SERVER"]
@@ -141,6 +170,37 @@ def create_app(config: dict):
         except FileNotFoundError:
             return jsonify({"error": "Preset not found"}), 404
 
+    @app.get("/api/preset/<path:filename>/download-zip")
+    def download_preset_zip(filename):
+        try:
+            filename = safe_preset_filename(filename)
+            data = current_store().read_preset(filename)
+            entry = next(
+                (
+                    item
+                    for item in current_store().list_presets()
+                    if item["file"] == filename
+                ),
+                {"name": filename[: -len(PRESET_SUFFIX)], "file": filename},
+            )
+            options = parse_export_options(args=request.args)
+            buffer, download_name = current_packager().build_single_preset_zip(
+                filename,
+                data,
+                entry,
+                export_options=options,
+            )
+            return send_file(
+                buffer,
+                mimetype="application/zip",
+                as_attachment=True,
+                download_name=download_name,
+            )
+        except ValueError as error_info:
+            return jsonify({"error": str(error_info)}), 400
+        except FileNotFoundError:
+            return jsonify({"error": "Preset not found"}), 404
+
     @app.get("/api/status")
     def get_status():
         return jsonify(current_api_server().last_status)
@@ -174,7 +234,9 @@ def create_app(config: dict):
             {
                 "targetMonitor": store.target_monitor,
                 "wallpaperPathOverride": cfg.get("wallpaperPathOverride", ""),
+                "scriptWallpaperPath": lively.get("scriptWallpaperPath", ""),
                 "installedWallpaperPath": lively.get("installedWallpaperPath", ""),
+                "pathSource": lively.get("pathSource", "script"),
                 "savedataDir": lively.get("savedataDir", ""),
                 "monitors": lively.get("monitors", []),
                 "apiPort": int(cfg.get("apiPort", 8766)),
@@ -189,6 +251,8 @@ def create_app(config: dict):
 
         if "targetMonitor" in payload:
             cfg["targetMonitor"] = str(payload["targetMonitor"])
+        if "apiPort" in payload:
+            cfg["apiPort"] = normalize_port(payload["apiPort"])
 
         override = payload.get("wallpaperPathOverride")
         if override is not None:
@@ -206,12 +270,15 @@ def create_app(config: dict):
 
         new_store = create_preset_store(cfg)
         current_api_server().stop()
-        new_api_server = PresetApiServer(new_store, port=app.config["API_PORT"])
+        new_api_port = normalize_port(cfg.get("apiPort", 8766))
+        write_api_port_runtime(new_store.wallpaper_path, new_api_port)
+        new_api_server = PresetApiServer(new_store, port=new_api_port)
         new_api_server.start()
 
         app.config["APP_CONFIG"] = cfg
         app.config["STORE"] = new_store
         app.config["API_SERVER"] = new_api_server
+        app.config["API_PORT"] = new_api_port
 
         return jsonify(
             {
@@ -229,6 +296,10 @@ def create_app(config: dict):
         filename = str(payload.get("file", "")).strip()
         if not filename:
             return jsonify({"error": "Preset file is required"}), 400
+        try:
+            filename = safe_preset_filename(filename)
+        except ValueError as error_info:
+            return jsonify({"error": str(error_info)}), 400
 
         monitor = str(payload.get("monitor") or current_store().target_monitor)
         current_store().target_monitor = monitor
@@ -238,11 +309,14 @@ def create_app(config: dict):
             name=name,
             file=filename,
         )
-        current_api_server().last_status = {
-            "ok": None,
-            "message": "Working...",
-            "action": None,
-        }
+        current_api_server().last_status = status_with_persistence(
+            {
+                "ok": None,
+                "message": "Working...",
+                "action": None,
+            },
+            result.get("livelyPersistence"),
+        )
         return jsonify({"ok": True, **result})
 
     @app.post("/api/command/capture")
@@ -255,18 +329,21 @@ def create_app(config: dict):
 
         monitor = str(payload.get("monitor") or current_store().target_monitor)
         current_store().target_monitor = monitor
-        current_store().write_command(
+        result = current_store().write_command(
             "capture",
             monitor=monitor,
             name=name,
             file=filename or None,
         )
-        current_api_server().last_status = {
-            "ok": None,
-            "message": "Working...",
-            "action": None,
-        }
-        return jsonify({"ok": True})
+        current_api_server().last_status = status_with_persistence(
+            {
+                "ok": None,
+                "message": "Working...",
+                "action": None,
+            },
+            result.get("livelyPersistence"),
+        )
+        return jsonify({"ok": True, **result})
 
     @app.post("/api/preset/rename")
     def rename_preset():
@@ -314,12 +391,17 @@ def create_app(config: dict):
             return jsonify({"error": "Choose a preset JSON file first"}), 400
 
         try:
-            raw = upload.read().decode("utf-8")
+            raw = read_upload_limited(upload).decode("utf-8")
             payload = json.loads(raw)
 
             if isinstance(payload, dict) and "presets" in payload and "manifest" in payload:
                 return jsonify(
                     {"error": "That file is a full backup. Use Upload backup JSON instead."}
+                ), 400
+
+            if upload.filename.lower().endswith(".zip"):
+                return jsonify(
+                    {"error": "That file is a ZIP package. Use Upload preset ZIP instead."}
                 ), 400
 
             if not isinstance(payload, dict):
@@ -339,6 +421,48 @@ def create_app(config: dict):
             )
         except json.JSONDecodeError:
             return jsonify({"error": "Invalid JSON file"}), 400
+        except ValueError as error_info:
+            return jsonify({"error": str(error_info)}), 400
+        except Exception as error_info:
+            return jsonify({"error": str(error_info)}), 500
+
+    @app.post("/api/preset/upload-zip")
+    def upload_preset_zip():
+        upload = request.files.get("file")
+
+        if upload is None or not upload.filename:
+            return jsonify({"error": "Choose a preset ZIP file first"}), 400
+
+        try:
+            result = current_packager().import_zip(
+                read_upload_limited(upload),
+                import_callback=lambda data, name, filename: current_store().import_preset_from_zip(
+                    data,
+                    name,
+                    filename,
+                ),
+                restore_bundle_callback=current_store().restore_backup_bundle,
+                write_slideshow_callback=current_store().write_slideshow,
+                allowed_mode="single",
+            )
+            entry = result["preset"]
+            asset_count = len(result.get("installedAssets", []))
+            wallpaper_path = result.get("wallpaperPath", str(current_store().wallpaper_path))
+            return jsonify(
+                {
+                    "ok": True,
+                    "message": (
+                        f"Imported '{entry['name']}' with {asset_count} asset file(s) "
+                        f"into {wallpaper_path}"
+                    ),
+                    "preset": entry,
+                    "presets": current_store().list_presets(),
+                    "installedAssets": result.get("installedAssets", []),
+                    "wallpaperPath": wallpaper_path,
+                }
+            )
+        except zipfile.BadZipFile:
+            return jsonify({"error": "Invalid ZIP file"}), 400
         except ValueError as error_info:
             return jsonify({"error": str(error_info)}), 400
         except Exception as error_info:
@@ -377,14 +501,41 @@ def create_app(config: dict):
             download_name=f"mt17-presets-backup-{stamp}.json",
         )
 
+    @app.get("/api/backup/download-zip")
+    def download_backup_zip():
+        store = current_store()
+        bundle = store.build_backup_bundle()
+        options = parse_export_options(args=request.args)
+        slideshow = None
+        try:
+            slideshow = store.read_slideshow()
+        except (json.JSONDecodeError, ValueError):
+            slideshow = None
+        buffer, download_name = current_packager().build_full_backup_zip(
+            bundle,
+            slideshow=slideshow,
+            export_options=options,
+        )
+        return send_file(
+            buffer,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name=download_name,
+        )
+
     @app.post("/api/backup/upload")
     def upload_backup():
         upload = request.files.get("file")
         if upload is None or not upload.filename:
             return jsonify({"error": "Choose a backup JSON file first"}), 400
 
+        if upload.filename.lower().endswith(".zip"):
+            return jsonify(
+                {"error": "That file is a ZIP package. Use Upload full backup ZIP instead."}
+            ), 400
+
         try:
-            raw = upload.read().decode("utf-8")
+            raw = read_upload_limited(upload).decode("utf-8")
             bundle = json.loads(raw)
             count = current_store().restore_backup_bundle(bundle)
             return jsonify(
@@ -396,6 +547,48 @@ def create_app(config: dict):
             )
         except json.JSONDecodeError:
             return jsonify({"error": "Invalid JSON file"}), 400
+        except ValueError as error_info:
+            return jsonify({"error": str(error_info)}), 400
+        except Exception as error_info:
+            return jsonify({"error": str(error_info)}), 500
+
+    @app.post("/api/backup/upload-zip")
+    def upload_backup_zip():
+        upload = request.files.get("file")
+        if upload is None or not upload.filename:
+            return jsonify({"error": "Choose a full backup ZIP file first"}), 400
+
+        try:
+            result = current_packager().import_zip(
+                read_upload_limited(upload),
+                import_callback=current_store().import_preset_data,
+                restore_bundle_callback=current_store().restore_backup_bundle,
+                write_slideshow_callback=current_store().write_slideshow,
+                allowed_mode="full",
+            )
+
+            count = result.get("restoredPresets", 0)
+            asset_count = len(result.get("installedAssets", []))
+            wallpaper_path = result.get("wallpaperPath", str(current_store().wallpaper_path))
+            slideshow_note = (
+                " Slideshow settings restored."
+                if result.get("slideshowRestored")
+                else ""
+            )
+            return jsonify(
+                {
+                    "ok": True,
+                    "message": (
+                        f"Restored {count} preset(s) and {asset_count} asset file(s) "
+                        f"into {wallpaper_path}.{slideshow_note}"
+                    ),
+                    "presets": current_store().list_presets(),
+                    "installedAssets": result.get("installedAssets", []),
+                    "wallpaperPath": wallpaper_path,
+                }
+            )
+        except zipfile.BadZipFile:
+            return jsonify({"error": "Invalid ZIP file"}), 400
         except ValueError as error_info:
             return jsonify({"error": str(error_info)}), 400
         except Exception as error_info:

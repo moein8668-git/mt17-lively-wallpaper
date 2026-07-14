@@ -19,6 +19,11 @@ const installedWallpaperPath = document.getElementById("installedWallpaperPath")
 const savedataDir = document.getElementById("savedataDir");
 const wallpaperPathOverride = document.getElementById("wallpaperPathOverride");
 const downloadPreset = document.getElementById("downloadPreset");
+const downloadPresetZip = document.getElementById("downloadPresetZip");
+const downloadBackup = document.getElementById("downloadBackup");
+const downloadBackupZip = document.getElementById("downloadBackupZip");
+const exportBlankApi = document.getElementById("exportBlankApi");
+const exportRandomLocation = document.getElementById("exportRandomLocation");
 const wallpaperThumb = document.getElementById("wallpaperThumb");
 const wallpaperThumbFallback = document.getElementById("wallpaperThumbFallback");
 const slideshowEnabled = document.getElementById("slideshowEnabled");
@@ -40,7 +45,9 @@ const actionButtons = [
   "uploadBtn",
   "restoreBtn",
   "downloadBackup",
+  "downloadBackupZip",
   "downloadPreset",
+  "downloadPresetZip",
   "slideshowSaveBtn",
   "slideshowAddBtn",
   "slideshowRemoveBtn",
@@ -94,15 +101,45 @@ function selectPresetByFile(file) {
   return true;
 }
 
+function exportOptionsQuery() {
+  const params = new URLSearchParams();
+  if (exportBlankApi?.checked) {
+    params.set("blankApiKey", "true");
+  }
+  if (exportRandomLocation?.checked) {
+    params.set("randomizeLocation", "true");
+  }
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+function updateExportDownloadLinks() {
+  const options = exportOptionsQuery();
+  if (downloadBackupZip) {
+    downloadBackupZip.href = `/api/backup/download-zip${options}`;
+  }
+  updatePresetDownloadLink();
+}
+
 function updatePresetDownloadLink() {
   if (!selectedFile) {
     downloadPreset.href = "#";
     downloadPreset.classList.add("disabled");
+    if (downloadPresetZip) {
+      downloadPresetZip.href = "#";
+      downloadPresetZip.classList.add("disabled");
+    }
     return;
   }
 
-  downloadPreset.href = `/api/preset/${encodeURIComponent(selectedFile)}/download`;
+  const options = exportOptionsQuery();
+  const encoded = encodeURIComponent(selectedFile);
+  downloadPreset.href = `/api/preset/${encoded}/download`;
   downloadPreset.classList.remove("disabled");
+  if (downloadPresetZip) {
+    downloadPresetZip.href = `/api/preset/${encoded}/download-zip${options}`;
+    downloadPresetZip.classList.remove("disabled");
+  }
 }
 
 let targetMonitor = "1";
@@ -134,7 +171,7 @@ async function loadMonitors() {
     targetMonitor = settings.targetMonitor || monitors[0]?.id || "1";
     monitorSelect.value = targetMonitor;
     wallpaperPathInfo.textContent = settings.installedWallpaperPath
-      ? `Wallpaper: ${settings.installedWallpaperPath}`
+      ? `Wallpaper folder (${settings.pathSource === "override" ? "override" : "auto from script"}): ${settings.installedWallpaperPath}`
       : "";
   } catch (error) {
     wallpaperPathInfo.textContent = "";
@@ -606,6 +643,33 @@ document.getElementById("uploadPresetFile").addEventListener("change", async (ev
   }
 });
 
+document.getElementById("uploadPresetZipFile").addEventListener("change", async (event) => {
+  const fileInput = event.target;
+  if (!fileInput.files || !fileInput.files[0]) {
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", fileInput.files[0]);
+
+  try {
+    const response = await fetch("/api/preset/upload-zip", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Upload failed");
+    }
+    fileInput.value = "";
+    await loadPresets({ selectFile: data.preset.file });
+    await loadSlideshow();
+    setStatus(data.message || "Preset ZIP imported");
+  } catch (error) {
+    setStatus(error.message, false);
+  }
+});
+
 document.getElementById("backupBtn").addEventListener("click", async () => {
   try {
     const data = await webJson("/api/backup", { method: "POST", body: "{}" });
@@ -651,6 +715,42 @@ document.getElementById("uploadBtn").addEventListener("click", async () => {
     fileInput.value = "";
     await loadPresets();
     setStatus(data.message || "Backup uploaded");
+  } catch (error) {
+    setStatus(error.message, false);
+  }
+});
+
+document.getElementById("uploadZipBtn").addEventListener("click", async () => {
+  const fileInput = document.getElementById("uploadZipFile");
+  if (!fileInput.files || !fileInput.files[0]) {
+    setStatus("Choose a full backup ZIP file first", false);
+    return;
+  }
+
+  if (
+    !window.confirm(
+      "Import full backup ZIP? This replaces your current presets and restores slideshow settings from the package."
+    )
+  ) {
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", fileInput.files[0]);
+
+  try {
+    const response = await fetch("/api/backup/upload-zip", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Upload failed");
+    }
+    fileInput.value = "";
+    await loadPresets();
+    await loadSlideshow();
+    setStatus(data.message || "Full backup ZIP imported");
   } catch (error) {
     setStatus(error.message, false);
   }
@@ -703,9 +803,13 @@ async function pollHealth() {
   window.setTimeout(pollHealth, 5000);
 }
 
+exportBlankApi?.addEventListener("change", updateExportDownloadLinks);
+exportRandomLocation?.addEventListener("change", updateExportDownloadLinks);
+
 loadMonitors()
   .then(() => loadPresets())
   .then(() => loadSlideshow())
+  .then(() => updateExportDownloadLinks())
   .catch((error) => setStatus(error.message, false));
 loadThumbnail();
 pollHealth();
